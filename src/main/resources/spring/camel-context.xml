@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="
+    http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+    http://camel.apache.org/schema/spring       http://camel.apache.org/schema/spring/camel-spring.xsd
+    ">
+
+  <bean id="amqp"
+    class="org.apache.camel.component.amqp.AMQPComponent">
+    <property name="connectionFactory">
+      <bean class="org.apache.qpid.jms.JmsConnectionFactory">
+        <property name="remoteURI" value="amqp://192.168.42.1:5672" />
+        <property name="username" value="amq"/>
+        <property name="password" value="amq"/>
+        <property name="topicPrefix" value="topic://" />  <!-- only necessary when connecting to ActiveMQ over AMQP 1.0 -->
+      </bean>
+    </property>
+    <property name="concurrentConsumers" value="5" />
+  </bean>
+
+  <camelContext id="camel"
+    xmlns="http://camel.apache.org/schema/spring">
+
+    <route id="simple-route">
+      <from id="route-timer" uri="timer://foo?period=10000" />
+      <setBody id="route-setBody">
+        <simple>Hello World from camel-context.xml</simple>
+      </setBody>
+      <to uri="amqp://cdk-test-queue"/>
+    </route>
+
+    <route id="consume-from-amqp">
+      <from uri="amqp://cdk-test-queue"/>
+      <to uri="log:CDK-AMQ7-Test?showAll=true&amp;multiline=true"/>
+    </route>
+
+  </camelContext>
+</beans>
